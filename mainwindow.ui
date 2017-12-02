@@ -64,6 +64,16 @@
             <string>One Time Padding</string>
            </property>
           </item>
+          <item>
+           <property name="text">
+            <string>Rail Fence</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Permutation</string>
+           </property>
+          </item>
          </widget>
         </item>
         <item>

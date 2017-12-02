@@ -25,4 +25,10 @@ string vigenereCipher(string msg,string key,bool encrypt);
 void smallAlpha(string & str);
 string oneTimePad(string msg,string& newKey);
 
+string railFence(string msg,bool encrypt);
+string permuteCipher(string msg,string &k ,bool encrypt);
+int ceil(double number);
+string permute(string msg,string key,bool encrypt);
+bool numberDistinct(string key);
+
 #endif // CIPHERS_H

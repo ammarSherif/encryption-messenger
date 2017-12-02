@@ -24,6 +24,7 @@ void MainWindow::on_msg_textChanged()
         // show the cipher
         programEdit=true;
         txt=ui->msg->toPlainText().toStdString();
+        key=ui->strKey->text().toStdString();
         switch(ui->enAlgorithm->currentIndex()){
         case 0: //caesar
             cipher = caeserEncrypt(txt,ui->numKey->value());
@@ -35,13 +36,20 @@ void MainWindow::on_msg_textChanged()
             cipher = encryptMul(txt,ui->numKey->value(),true);
             break;
         case 3:
-            cipher = playFairEn(txt,ui->strKey->text().toStdString(),true);
+            cipher = playFairEn(txt,key,true);
             break;
         case 4:
-            cipher = vigenereCipher(txt,ui->strKey->text().toStdString(),true);
+            cipher = vigenereCipher(txt,key,true);
             break;
         case 5:
             cipher = oneTimePad(txt,key);
+            ui->strKey->setText(QString::fromStdString(key));
+            break;
+        case 6:
+            cipher = railFence(txt,true);
+            break;
+        case 7:
+            cipher = permuteCipher(txt,key,true);
             ui->strKey->setText(QString::fromStdString(key));
             break;
         default:
@@ -63,7 +71,8 @@ void MainWindow::on_cipher_textChanged()
 {
     if(!programEdit){
         programEdit=true;
-        cipher=ui->cipher->toPlainText().toStdString();
+        cipher = ui->cipher->toPlainText().toStdString();
+        key = ui->strKey->text().toStdString();
         switch(ui->enAlgorithm->currentIndex()){
         case 0: //caesar
             txt = caeserEncrypt(cipher,-1*ui->numKey->value());
@@ -75,13 +84,19 @@ void MainWindow::on_cipher_textChanged()
             txt = decryptMul(cipher,ui->numKey->value(),true);
             break;
         case 3:
-            txt = playFairEn(cipher,ui->strKey->text().toStdString(),false);
+            txt = playFairEn(cipher,key,false);
             break;
         case 4:
-            txt = vigenereCipher(txt,ui->strKey->text().toStdString(),false);
+            txt = vigenereCipher(cipher,key,false);
             break;
         case 5:
-            txt = vigenereCipher(txt,ui->strKey->text().toStdString(),false);
+            txt = vigenereCipher(cipher,key,false);
+            break;
+        case 6:
+            txt = railFence(cipher,false);
+            break;
+        case 7:
+            txt = permuteCipher(cipher,key,false);
             break;
         default:
             break;

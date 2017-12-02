@@ -444,3 +444,156 @@ string oneTimePad(string msg,string& newKey){
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+string railFence(string msg,bool encrypt){
+    string cipherTxt="";
+    if(encrypt){
+        for(unsigned int j=0;j<msg.length();j=j+2)  //add even letters
+            cipherTxt+=msg[j];
+        for(unsigned int j=1;j<msg.length();j=j+2)  //add odd letters
+            cipherTxt+=msg[j];
+    } else {
+        for(unsigned int j=0;j<msg.length();j++)
+            cipherTxt+='a';                         // initialize with 'a'
+        for(unsigned int j=0;j<msg.length();j++)
+            if(2*j<msg.length())                    // put first half in
+                cipherTxt[2*j]=msg[j];              // the even positions
+            else    // no more even positions, means try to fill the odd ones now
+                cipherTxt[(2*(j-ceil( (double)msg.length()/2)))+1]=msg[j];
+            // note j ranges from 0 to length -1
+            // even positions in cipher are at range 0 to ceil(length/2)-1
+            // as they are ceil(n/2) letters at even indices so as their
+            // range start at 0 it will end at ceil(n/2)-1
+            // so odd positions start at ceil(n/2) which is number one
+            // i.e. odd positions are at range ceil(n/2)+{0,1,2,3,4,...,floor(n/2)}
+            // so by subtracting j-ceil(n/2) will result in sequence {0,1,...}
+            // which should be mapped to {1,3,5,...} so you guessed it
+            // multiply by two and add 1 which is done here
+    }
+    return cipherTxt;
+}
+
+int ceil(double number){
+    if((number-(int)number)>0)
+        return ((int)number +1);
+    else
+        return (int)number;
+}
+
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+string permuteCipher(string msg,string &k ,bool encrypt){
+    if(msg.length()<3){
+        // too small message
+        return msg;
+    }
+    if(encrypt){
+        // distinct numbers
+        if (!numberDistinct(k)||k.length()<2){
+            string strKeyNum = "";
+            static char numbers[10]={'0','1','2','3','4','5','6','7','8','9'};
+            srand(time(NULL));// initialize the seed of random with number of seconds
+            unsigned int key=0;
+            do{
+                key=mod(rand(),10);
+            }while(key<3 || key>msg.length());// determine the number of coulmns
+            unsigned int coulmnNum = key;
+            for(unsigned int j=0;j<coulmnNum;j++)
+                strKeyNum+='a';     // initialize key with default values 'a'
+            for(unsigned int j=0;j<coulmnNum;j++){
+                do{
+                    key=mod(rand(),coulmnNum);
+                }while(strKeyNum[key]!='a');
+                strKeyNum[key]=numbers[j];
+            }
+            k= strKeyNum;
+        }
+        while (mod(msg.length(),k.length())!=0) {
+            msg+='x';
+        }
+        // perfect size match, adding paddings
+        // now, permute to encipher
+        return permute(msg,k,encrypt);
+    } else {
+        return permute(msg,k,encrypt);          // permute to decipher
+    }
+}
+
+
+string permute(string msg,string key,bool encrypt){
+//    if(!encrypt && key.empty()){    // enter the key
+//        cout<<" Please enter the key provided by the algorithm [only numbers] \n";
+//        cout<<" The key : ";
+//        getline(cin,key);
+//        if(cin.fail()){
+//            cin.clear();
+//            cin.ignore(100,'\n');
+//        }
+//        cout<<"--------------------------------------->\n";
+//    }
+//    while (!numberDistinct(key)) {
+//        cout<<" Sorry it is not a valid key for permutation cipher\n";
+//        cout<<" Here some notes, key must have distinct numbers only\n";
+//        cout<<" ranges from 0 to its size-1 with any sequence\n";
+//        cout<<" Please re-enter the key : ";
+//        getline(cin,key);
+//        if(cin.fail()){
+//            cin.clear();
+//            cin.ignore(100,'\n');
+//        }
+//        cout<<"--------------------------------------->\n";
+//    }
+    string permutedMsg="";
+    if(!numberDistinct(key)||mod(msg.length(),key.length())!=0){
+        // invalid key
+        return msg;
+    }
+
+    for(unsigned int j=0;j<msg.length();j++)
+        permutedMsg+='a';
+    // initialize with a
+    // number of values per single coulmn = the number of rows = number of elements added
+    // for each iteration to the cipher
+    unsigned int rowCount = msg.length()/key.length();
+    unsigned int coulmnNum=0;
+    for(unsigned int col=0;col<key.length();col++){
+        // loop on all values of the key to know where is the place of each coulmn
+        coulmnNum = (unsigned int)(key[col]-'0');             // get the value of that coulmn
+        // put the letters in that coulmn to its specific place int the cipher
+        // its original place is the places of that coulmn specified by <col> variable
+        // so in the original msg col specify its coulmn and the rows loop by <k> variable
+        // k*numberOfCoulmns(strKeyNum.length())+col
+        // and that would be mapped, in cipher, to row number specified by coulmnValue
+        // and loop by <k> to cover all coulmns in that row.
+        for(unsigned int k=0;k<rowCount;k++){
+            // add the values of that coulmn to cipher
+            if(encrypt)
+                permutedMsg[coulmnNum*rowCount+k]=msg[k*key.length()+col];
+            else    // do reverse in deciphering
+                permutedMsg[k*key.length()+col]=msg[coulmnNum*rowCount+k];
+        }
+    }
+    while (!encrypt && permutedMsg[permutedMsg.length()-1]=='x') {  // remove paddings at deciphering
+        permutedMsg.erase(permutedMsg.end()-1);
+    }
+    return permutedMsg;
+}
+
+bool numberDistinct(string key){
+    // checks distinct number and within specific range
+    if(key.empty())
+        return false;
+    char alpha[]={'a','a','a','a','a','a','a','a','a','a'};
+    for(unsigned int j=0;j<key.length();j++)
+        if((key[j]-'0')>=(int)key.length()|| (key[j]-'0')< 0|| alpha[(key[j]-'0')]!='a')
+            return false;
+        else
+             alpha[(key[j]-'0')]='v';
+    return true;
+}
+
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
