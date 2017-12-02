@@ -1,5 +1,8 @@
 //#include<iomanip>
 #include <iostream>
+#include <algorithm>
+#include <bitset>
+
 using namespace std;
 
 #ifndef CIPHERS_H
