@@ -595,20 +595,20 @@ bool numberDistinct(string key){
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 string initialPermute(string msg){
+    ///TODO dynamic allocation of block arrays and free them after finish
     while(mod(msg.length(),8)!=0)
         msg+='x';   // paddings
     string block[msg.length()/8];
     string permutedBlocks[msg.length()/8];
     for(unsigned int i=0;i<msg.length()/8;i++)
         block[i]=msg.substr(i*8,8); // 8 char = 64 bit each
-    static int permute[]={
+    static const int permute[]={
         57,49,41,33,25,17,9,1,59,51,43,35,27,19,11,3,
         61,53,45,37,29,21,13,5,63,55,47,39,31,23,15,7,
         56,48,40,32,24,16,8,0,58,50,42,34,26,18,10,2,
         60,52,44,36,28,20,12,4,62,54,46,38,30,22,14,6
     };
     // get bit representation
-//    string temp="";
     string tmp="";
     string res="";
     for(unsigned int i=0;i<msg.length()/8;i++){//for each substring of message
@@ -620,13 +620,12 @@ string initialPermute(string msg){
         }
         // now res is 64 values represents 64 bit representation of substring
         block[i]=permutedBlocks[i]=res;   //put values in the array
-//        temp+=res;
         res="";         //reset the res variable for further manipulations
     }
     res="";             // clear so it could hold the message converted to bits
     for(unsigned int i=0;i<msg.length()/8;i++){ //for each block
         for(int j=0;j<64;j++){      //permute it in
-            (permutedBlocks[i])[permute[j]]=(block[i])[j];
+            (permutedBlocks[i])[j]=(block[i])[permute[j]];
         }
         res+=permutedBlocks[i];
     }
@@ -639,7 +638,7 @@ string finalPermute(string msg){
     string permutedBlocks[msg.length()/64];
     for(unsigned int i=0;i<msg.length()/64;i++)
         block[i]=permutedBlocks[i]=msg.substr(i*64,64); // 64 bit for each block
-    static int permute[]={
+    static const int permute[]={
         39,7,47,15,55,23,63,31,38,6,46,14,54,22,62,30,
         37,5,45,13,53,21,61,29,36,4,44,12,52,20,60,28,
         35,3,43,11,51,19,59,27,34,2,42,10,50,18,58,26,
@@ -649,11 +648,183 @@ string finalPermute(string msg){
     string res="";
     for(unsigned int i=0;i<msg.length()/64;i++){ //for each block
         for(int j=0;j<64;j++){      //permute it in
-            (permutedBlocks[i])[permute[j]]=(block[i])[j];
+            (permutedBlocks[i])[j]=(block[i])[permute[j]];
         }
         res+=permutedBlocks[i];
     }
     return res;
+}
+
+string permuteKeyDES(string k){
+    if(k.length()<8){
+        return "";
+    }
+    string tmp="";
+    string res="";
+    for(unsigned int i=0;i<8;i++){     //for each char i.e. 8bits
+        //convert to binary
+        tmp= bitset<8>((int)(k[i])).to_string();
+        reverse(tmp.begin(),tmp.end());
+        res += tmp;
+    }
+    tmp="";
+    static const int permute[]={
+        56,48,40,32,24,16,8,0,57,49,41,33,25,17,
+        9,1,58,50,42,34,26,18,10,2,59,51,43,35,
+        62,54,46,38,30,22,14,6,61,53,45,37,29,21,
+        13,5,60,52,44,36,28,20,12,4,27,19,11,3
+    };
+    for(unsigned int j=0;j<56;j++){
+        tmp += res[permute[j]];
+    }
+    return tmp;
+}
+
+void roundKeyShifterDES(string &leftKey,string &rightKey,int roundNum,bool encrypt){
+    if(encrypt){
+        // left and right key must be 28 bit,
+        // and round num is at most 63 and at least 0 [0-63]
+        char lftKBit = leftKey[27];
+        char rghtKBit = rightKey[27];   // save left most bit
+        for(unsigned int j=27;j>0;j--){
+            // in circular shift left
+            // each bit is assigned to the bit before it
+            // and bit 0 will be assigned to bit 27 (rightmost)
+            leftKey[j]=leftKey[j-1];
+            rightKey[j]=rightKey[j-1];
+        }
+        leftKey[0] = lftKBit;
+        rightKey[0]= rghtKBit;
+        if(roundNum!=0 && roundNum!=1 && roundNum!=8 && roundNum!=15){
+            // SHIFT again so it will equal 2-bit circular shift
+            lftKBit = leftKey[27];
+            rghtKBit = rightKey[27];   // save left most bit
+            for(unsigned int j=27;j>0;j--){
+                // in circular shift left
+                // each bit is assigned to the bit before it
+                // and bit 0 will be assigned to bit 27 (rightmost)
+                leftKey[j]=leftKey[j-1];
+                rightKey[j]=rightKey[j-1];
+            }
+            leftKey[0] = lftKBit;
+            rightKey[0]= rghtKBit;
+        }
+    } else {
+        if(roundNum==0){
+            for(unsigned int i=0;i<16;i++){
+                // shift the key 16 times to get last key as in encryption
+                roundKeyShifterDES(leftKey,rightKey,i,true);
+            }
+        } else {
+            // to decrypt just start with last key
+            // and for each round cirular shift RIGHT
+            char lftKBit = leftKey[0];
+            char rghtKBit = rightKey[0];   // save left most bit
+            for(unsigned int j=0;j<27;j++){
+                // in circular shift RIGHT
+                // each bit is assigned to the bit after it
+                // and bit 27 will be assigned to bit 0 (0 is leftmost bit)
+                leftKey[j]=leftKey[j+1];
+                rightKey[j]=rightKey[j+1];
+            }
+            leftKey[27] = lftKBit;
+            rightKey[27]= rghtKBit;
+            if((15-roundNum)!=1 && (15-roundNum)!=2 && (15-roundNum)!=9 && (15-roundNum)!=15){
+                // SHIFT again so it will equal 2-bit circular shift
+                lftKBit = leftKey[0];
+                rghtKBit = rightKey[0];   // save left most bit
+                for(unsigned int j=0;j<27;j++){
+                    // in circular shift RIGHT
+                    // each bit is assigned to the bit after it
+                    // and bit 27 will be assigned to bit 0 (LEFTMOST)
+                    leftKey[j]=leftKey[j+1];
+                    rightKey[j]=rightKey[j+1];
+                }
+                leftKey[27] = lftKBit;
+                rightKey[27]= rghtKBit;
+            }
+        }
+    }
+}
+
+void DES(string &msg,string key,bool encrypt){
+    // NOTE : in representation
+    // in real binary system
+    // 55 = 0011 0111
+    // my representation is flipped
+    // 55 = 1110 0011
+    // so first position, i.e. bit 0 is the actual leftmost bit
+    msg = initialPermute(msg);
+    key = permuteKeyDES(key);
+    // each block of the message is 64 bit then number of blocks = length /64
+    // and each block is divided to left and right
+    string rightBlock[msg.length()/64];
+    string leftBlock[msg.length()/64];
+    // for compression of Key
+    static const int DBox[] ={
+        13,16,10,23,0,4,2,27,14,5,20,9,22,18,11,3,25,7,
+        15,6,26,19,12,1,40,51,30,36,46,54,29,39,50,44,32,47,
+        43,48,38,55,33,52,45,41,49,35,28,31
+    };
+    // for expansion of each block
+    static const int EBox[]={
+        31,0,1,2,3,4,3,4,5,6,7,8,7,8,9,10,11,12,11,12,13,14,15,16,15,16,17,18,19,20,
+        19,20,21,22,23,24,23,24,25,26,27,28,27,28,29,30,31,0
+    };
+    //initialize blocks of the message
+    for(unsigned int i=0;i<msg.length()/64;i++){
+        // NOTE: bit 0 is the rightmost bit
+        rightBlock[i]= msg.substr(i*64,32);   // each is 32-bit
+        leftBlock[i] = msg.substr(i*64+32,32);// each is 32-bit
+        // but right start from position 0 to position 31
+        // and left start from 0+32 = 32 to 65
+    }
+    string rKey = key.substr(0,28);     // first 28 bit is the right
+    string lKey = key.substr(28,28);    // last  28 bit is the left
+    string lBlock,rBlock;               // current left and right blocks
+    //::::::::::::::::: 16 ROUNDS ::::::::::::::::::::::::
+    string resKey;
+    for(unsigned int i=0;i<16;i++) {
+        // :::::::::: Key calculations :::::::::::::::::::
+        roundKeyShifterDES(lKey,rKey,i,encrypt);
+        key = rKey+lKey;
+        // compression from 56 bit key to 48 bit key
+        resKey="";
+        for(unsigned int j=0;j<48;j++)
+            resKey+=key[DBox[j]];
+        // :::::::::::: msg manipulation :::::::::::::::::
+        for(unsigned int j=0;j<msg.length()/64;j++){
+            lBlock = leftBlock[j];
+            rBlock = rightBlock[j];
+
+            // ------------------------------------------
+            leftBlock[j]=rBlock;
+            // ------------------------------------------
+
+            rightBlock[j]="";
+            // expand the right block to 48 bit
+            for(unsigned int k=0;k<48;k++)
+                rightBlock[j]+=rBlock[EBox[k]];
+            rBlock=rightBlock[j];
+            // -------------------------------------------
+            // xor with the 48-bit key => in resKey
+            rightBlock[j]=""; //erase, so it could hold the new values
+            for(unsigned int k=0;k<48;k++)
+                rightBlock[j]+=((int)(rBlock[j]-'0')^(int)(resKey[j]-'0'))+'0';
+            //
+        }
+
+
+    }
+
+    msg = finalPermute(msg);
+}
+
+void SBox(string &rightBlock){
+    // rightBlock is 48-bit representation and the output should be
+    // 32-bit representation
+    string tmpRBlock = rightBlock;
+    string blocks[8];   // eight SBOXes, one for each block
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
