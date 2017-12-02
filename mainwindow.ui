@@ -94,7 +94,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPlainTextEdit" name="plainTextEdit"/>
+         <widget class="QPlainTextEdit" name="msg"/>
         </item>
         <item>
          <widget class="Line" name="line_4">
@@ -104,7 +104,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPlainTextEdit" name="plainTextEdit_2"/>
+         <widget class="QPlainTextEdit" name="cipher"/>
         </item>
         <item>
          <spacer name="horizontalSpacer_2">
