@@ -6,6 +6,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    programEdit = false;
+    ui->numKey->setValue(3);
+    ui->strKey->setText("MONARCHY");
 }
 
 MainWindow::~MainWindow()

@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "ciphers.h"
 #include <QMainWindow>
 
 namespace Ui {
@@ -17,6 +18,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    bool programEdit;
 };
 
 #endif // MAINWINDOW_H
