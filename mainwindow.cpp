@@ -37,6 +37,13 @@ void MainWindow::on_msg_textChanged()
         case 3:
             cipher = playFairEn(txt,ui->strKey->text().toStdString(),true);
             break;
+        case 4:
+            cipher = vigenereCipher(txt,ui->strKey->text().toStdString(),true);
+            break;
+        case 5:
+            cipher = oneTimePad(txt,key);
+            ui->strKey->setText(QString::fromStdString(key));
+            break;
         default:
             break;
         }
@@ -69,6 +76,12 @@ void MainWindow::on_cipher_textChanged()
             break;
         case 3:
             txt = playFairEn(cipher,ui->strKey->text().toStdString(),false);
+            break;
+        case 4:
+            txt = vigenereCipher(txt,ui->strKey->text().toStdString(),false);
+            break;
+        case 5:
+            txt = vigenereCipher(txt,ui->strKey->text().toStdString(),false);
             break;
         default:
             break;

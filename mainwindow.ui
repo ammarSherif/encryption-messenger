@@ -36,22 +36,32 @@
          <widget class="QComboBox" name="enAlgorithm">
           <item>
            <property name="text">
-            <string>Caesar</string>
+            <string>Caesar Cipher</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Level 2</string>
+            <string>Level 2 Cipher</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Level 3</string>
+            <string>Level 3 Cipher</string>
            </property>
           </item>
           <item>
            <property name="text">
             <string>Play Fair</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Vigenere</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>One Time Padding</string>
            </property>
           </item>
          </widget>

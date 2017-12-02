@@ -404,6 +404,43 @@ void toLower(string & s){
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+string vigenereCipher(string msg,string key,bool encrypt){
+    toLower(key);       // convert to lower case
+    smallAlpha(key);    // remover all unnecessary letters
+    if(key.empty()){    // no key => no encryption
+        return msg;
+    }
+    while(key.length()<msg.length())
+        key+=key;       // duplicate key until it covers the message
+    string cipher="";
+    int enc=(encrypt)?1:-1; // enc =1 at encrypting so it will do adding and subtract otherwise
+    for(unsigned int j=0;j<msg.length();j++){
+        if(msg[j]>='a' && msg[j]<='z'){         // lower case
+            cipher += (char) mod(((msg[j]-'a')+enc*(key[j]-'a')),26)+'a';
+        } else if(msg[j]>='A' && msg[j]<='Z'){  // UPPER CASE
+            cipher += (char) mod(((msg[j]-'A')+enc*(key[j]-'a')),26)+'A';
+        } else {                                // other characters like spaces, ... etc.
+            cipher += msg[j];
+        }
+    }
+    return cipher;
+}
 
+void smallAlpha(string & str){
+    for(int j=0;j<(int)str.length();j++)
+        if(str[j]<'a'||str[j]>'z'){  //out of range
+            str.erase(str.begin()+j);
+            j--;
+        }
+}
+
+string oneTimePad(string msg,string& newKey){
+    srand(time(NULL));
+    string key="";
+    while(key.length()<msg.length())
+        key +=(mod(rand(),26)+'a');
+    newKey = key;
+    return vigenereCipher(msg,key,true);
+}
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

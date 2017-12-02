@@ -21,4 +21,8 @@ void buildPFMat(string key,string &alpha);
 void addChar(char c,string &alpha);
 void toLower(string & s);
 
+string vigenereCipher(string msg,string key,bool encrypt);
+void smallAlpha(string & str);
+string oneTimePad(string msg,string& newKey);
+
 #endif // CIPHERS_H
