@@ -52,6 +52,10 @@ void MainWindow::on_msg_textChanged()
             cipher = permuteCipher(txt,key,true);
             ui->strKey->setText(QString::fromStdString(key));
             break;
+        case 8:
+            cipher = txt;
+            DES(cipher,key,true);
+            break;
         default:
             break;
         }
@@ -97,6 +101,10 @@ void MainWindow::on_cipher_textChanged()
             break;
         case 7:
             txt = permuteCipher(cipher,key,false);
+            break;
+        case 8:
+            txt = cipher;
+            DES(txt,key,false);
             break;
         default:
             break;

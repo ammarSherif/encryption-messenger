@@ -74,6 +74,11 @@
             <string>Permutation</string>
            </property>
           </item>
+          <item>
+           <property name="text">
+            <string>DES</string>
+           </property>
+          </item>
          </widget>
         </item>
         <item>

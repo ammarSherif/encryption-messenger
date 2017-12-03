@@ -150,6 +150,8 @@ string decryptMul(string &s, int key, bool pad){
             enStr+=s[i];
         }
     }
+    delete[] dKeys;
+    dKeys = NULL;
     return enStr;
 }
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -595,11 +597,10 @@ bool numberDistinct(string key){
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 string initialPermute(string msg){
-    ///TODO dynamic allocation of block arrays and free them after finish
     while(mod(msg.length(),8)!=0)
         msg+='x';   // paddings
-    string block[msg.length()/8];
-    string permutedBlocks[msg.length()/8];
+    string *block = new string[msg.length()/8];
+    string *permutedBlocks = new string[msg.length()/8];
     for(unsigned int i=0;i<msg.length()/8;i++)
         block[i]=msg.substr(i*8,8); // 8 char = 64 bit each
     static const int permute[]={
@@ -629,13 +630,16 @@ string initialPermute(string msg){
         }
         res+=permutedBlocks[i];
     }
+    delete[] block;
+    delete[] permutedBlocks;
+    block = permutedBlocks = NULL;
     return res;
 }
 
 string finalPermute(string msg){
     // message is in bit representation
-    string block[msg.length()/64];
-    string permutedBlocks[msg.length()/64];
+    string *block = new string[msg.length()/64];
+    string *permutedBlocks = new string[msg.length()/64];
     for(unsigned int i=0;i<msg.length()/64;i++)
         block[i]=permutedBlocks[i]=msg.substr(i*64,64); // 64 bit for each block
     static const int permute[]={
@@ -652,7 +656,32 @@ string finalPermute(string msg){
         }
         res+=permutedBlocks[i];
     }
-    return res;
+    // now res has the message after permutation
+    delete[] permutedBlocks;
+    delete[] block;
+    permutedBlocks = block = NULL;
+    // now convert it back to chars
+    string tmp="";
+    bitset<8> * val = NULL;
+    // erase the message to hold the new one
+    msg="";
+    for(unsigned int i=0;i<res.length()/8;i++){
+        // convert back the chars
+        // get the next 8-bits
+        tmp = res.substr(i*8,8);
+        // reverse them again as the bits are reversed in
+        // the representation of this program
+        reverse(tmp.begin(),tmp.end());
+        // construct a bitset that holds the value
+        val = new bitset<8>(tmp);
+        // convert it to character and add it to the message
+        msg+= (char)val->to_ulong();
+        // delete so no memory leak happen
+        delete val;
+        // just to make dealing with pointers more safe
+        val = NULL;
+    }
+    return msg;
 }
 
 string permuteKeyDES(string k){
@@ -754,12 +783,16 @@ void DES(string &msg,string key,bool encrypt){
     // my representation is flipped
     // 55 = 1110 0011
     // so first position, i.e. bit 0 is the actual leftmost bit
-    msg = initialPermute(msg);
     key = permuteKeyDES(key);
+    if(key.empty()){
+        msg+="\n PLEASE INSERT AT LEAST 8 CHARACTERS AS A KEY\n";
+        return;
+    }
+    msg = initialPermute(msg);
     // each block of the message is 64 bit then number of blocks = length /64
     // and each block is divided to left and right
-    string rightBlock[msg.length()/64];
-    string leftBlock[msg.length()/64];
+    string * rightBlock = new string[msg.length()/64];
+    string * leftBlock = new string[msg.length()/64];
     // for compression of Key
     static const int DBox[] ={
         13,16,10,23,0,4,2,27,14,5,20,9,22,18,11,3,25,7,
@@ -770,6 +803,11 @@ void DES(string &msg,string key,bool encrypt){
     static const int EBox[]={
         31,0,1,2,3,4,3,4,5,6,7,8,7,8,9,10,11,12,11,12,13,14,15,16,15,16,17,18,19,20,
         19,20,21,22,23,24,23,24,25,26,27,28,27,28,29,30,31,0
+    };
+    // for permuting the rightblock within the fiestel function
+    static const int permuteBox[]={ // 32-bit
+        16,7,20,21,29,12,28,17,1,15,23,26,5,18,31,10,
+        2,8,24,14,32,27,3,9,19,13,30,6,22,11,4,25
     };
     //initialize blocks of the message
     for(unsigned int i=0;i<msg.length()/64;i++){
@@ -815,14 +853,40 @@ void DES(string &msg,string key,bool encrypt){
             // 48-bit key, so make it to 32 bit using SBOXes
             SBox(rightBlock[j]);
             rBlock=rightBlock[j];
-            /// TODO implement the last permutation then, xor the result
-            /// with the left block and put it in the right. P92
+            // now right block is 32-bit last thing in the function
+            rightBlock[j]="";
+            for(unsigned int k=0;k<32;k++)
+                rightBlock[j]+=rBlock[permuteBox[k]];
+            rBlock=rightBlock[j];
+            // --------------------------------------------
+            // xor with the 32-bit left block => in lBlock
+            rightBlock[j]=""; //erase, so it could hold the new values
+            for(unsigned int k=0;k<32;k++)
+                rightBlock[j]+=((int)(rBlock[j]-'0')^(int)(lBlock[j]-'0'))+'0';
+            // now the round is done
+
+            //---------------------------------------------
+
+            // after last round swap, i.e. at i==15 is done
+            if(i==15){
+                lBlock = leftBlock[j];
+                leftBlock[j] = rightBlock[j];
+                rightBlock[j] = lBlock;
+            }
         }
-
-
     }
-
+    //::::::::::::::::: ROUNDS DONE ::::::::::::::::::::::::
+    // now collect the total message to perform final permutation
+    lBlock="";
+    for(unsigned int i=0;i<msg.length()/64;i++){
+        lBlock+= rightBlock[i]+leftBlock[i];
+    }
+    msg = lBlock;
+    // now do the final permutation and DONE
     msg = finalPermute(msg);
+    delete[] rightBlock;
+    delete[] leftBlock;
+    rightBlock=leftBlock=NULL;
 }
 
 void SBox(string &rightBlock){
@@ -831,7 +895,7 @@ void SBox(string &rightBlock){
     string tmpRBlock = "";
     string blocks[8];   // eight SBOXes, one for each block
     for(unsigned int i=0;i<8;i++){
-        blocks[i]=rightBlock.substr(i*8,6);
+        blocks[i]=rightBlock.substr(i*6,6);
         sBoxSubstitution(blocks[i],i);
         tmpRBlock+=blocks[i];
     }
@@ -843,8 +907,8 @@ void sBoxSubstitution(string & s,int boxNum){
     // NOTE this code is generated by a program I wrote
     // which takes the sbox as values and it would generate
     // these if statements, you would find it
-    // with the name of sBoxGeneration.cpp
-    // also the data is in another file called SBOX data.txt
+    // with the name of 'sBoxGeneration.cpp'
+    // also the data is in another file called 'SBOX data.txt'
     if(boxNum==0){  // sbox 1
         if(s=="001110"||s=="100000"||s=="011111"||s=="110111")
             s = "0000";

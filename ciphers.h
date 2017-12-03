@@ -34,4 +34,12 @@ int ceil(double number);
 string permute(string msg,string key,bool encrypt);
 bool numberDistinct(string key);
 
+string initialPermute(string msg);
+string finalPermute(string msg);
+string permuteKeyDES(string k);
+void roundKeyShifterDES(string &leftKey,string &rightKey,int roundNum,bool encrypt);
+void DES(string &msg,string key,bool encrypt);
+void SBox(string &rightBlock);
+void sBoxSubstitution(string & s,int boxNum);
+
 #endif // CIPHERS_H
